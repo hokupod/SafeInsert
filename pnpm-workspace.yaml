@@ -1,0 +1,6 @@
+packages:
+  - .
+
+minimumReleaseAge: 1440
+# 緊急脆弱性対応時のみ一時的に追加し、対応後に空へ戻す
+minimumReleaseAgeExclude: []
