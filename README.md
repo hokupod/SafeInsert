@@ -3,7 +3,7 @@
 IME確定時の誤送信リスクを下げるための、Chrome/Edge 向けブラウザ拡張です。  
 入力は Side Panel 側で行い、明示操作（`挿入` ボタン or `Ctrl+Enter`）でページへ反映します。
 
-## 現在の実装方針（v0.1.0）
+## 現在の実装方針
 
 - UI は **Side Panel 方式**（ページ内モーダルは不採用）
 - フォーカスターゲットは Content Script が追跡し、Background 経由で中継
@@ -88,7 +88,7 @@ pnpm test       # テスト実行
 pnpm zip
 ```
 
-- 出力例: `/.output/safeinsert-0.1.0-chrome.zip`
+- 出力例: `/.output/safeinsert-<version>-chrome.zip`
 
 ## 制約 / 既知事項
 
@@ -105,4 +105,4 @@ pnpm zip
 
 ## ライセンス
 
-ライセンスを決める場合は `LICENSE` を追加してください。
+MIT License。詳細は `LICENSE` を参照してください。
