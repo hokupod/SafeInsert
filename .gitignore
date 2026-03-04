@@ -3,3 +3,4 @@ node_modules
 .output
 coverage
 dist
+.DS_Store
