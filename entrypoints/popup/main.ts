@@ -4,12 +4,12 @@ import SidePanelPage from '../../src/sidepanel/SidePanelPage.svelte';
 
 const target = document.getElementById('app');
 if (!target) {
-  throw new Error('Side panel root element not found');
+  throw new Error('Popup root element not found');
 }
 
 mount(SidePanelPage, {
   target,
   props: {
-    surface: 'sidepanel'
+    surface: 'popup'
   }
 });

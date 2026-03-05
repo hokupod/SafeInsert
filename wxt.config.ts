@@ -16,6 +16,7 @@ export default defineConfig({
     permissions: ['storage', 'tabs'],
     action: {
       default_title: 'SafeInsert',
+      default_popup: 'popup.html',
       default_icon: {
         16: 'icon.png',
         32: 'icon.png'

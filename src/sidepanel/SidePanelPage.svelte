@@ -7,6 +7,7 @@
     SAFEINSERT_GET_TARGET_STATE_FROM_TRACKED,
     SAFEINSERT_INSERT_TEXT_TO_TRACKED,
     SAFEINSERT_SIDE_PANEL_ACTIVATED,
+    SAFEINSERT_UI_SURFACE_READY,
     SAFEINSERT_TARGET_CLEARED,
     type SafeInsertInsertResponse,
     type SafeInsertRuntimeMessage,
@@ -17,6 +18,7 @@
   import { DEFAULT_SETTINGS, readSettings, type SafeInsertSettings } from '../lib/settings';
 
   let settings: SafeInsertSettings = { ...DEFAULT_SETTINGS };
+  export let surface: 'sidepanel' | 'popup' = 'sidepanel';
   let text = '';
   let statusMessage = '';
   let errorMessage = '';
@@ -240,6 +242,8 @@
       return;
     }
 
+    notifySurfaceReadyIfVisible();
+
     if (refreshTimer !== null) {
       return;
     }
@@ -251,6 +255,23 @@
     }, 120);
   };
 
+  const notifySurfaceReadyIfVisible = (): void => {
+    if (document.visibilityState !== 'visible') {
+      return;
+    }
+
+    void browser.runtime
+      .sendMessage({
+        type: SAFEINSERT_UI_SURFACE_READY,
+        surface,
+        innerWidth: window.innerWidth,
+        innerHeight: window.innerHeight
+      })
+      .catch(() => {
+        // Ignore best effort signal failures.
+      });
+  };
+
   onMount(() => {
     void (async () => {
       settings = await readSettings();
@@ -258,12 +279,22 @@
       focusTextarea();
     })();
 
+    const handleVisibilityOrFocus = (): void => {
+      notifySurfaceReadyIfVisible();
+    };
+
+    requestAnimationFrame(() => notifySurfaceReadyIfVisible());
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+
     browser.runtime.onMessage.addListener(handleRuntimeMessage);
 
     return () => {
       if (refreshTimer !== null) {
         window.clearTimeout(refreshTimer);
       }
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
       browser.runtime.onMessage.removeListener(handleRuntimeMessage);
     };
   });
@@ -325,12 +356,14 @@
   }
 
   main {
+    width: 100%;
     height: 100vh;
     display: flex;
     flex-direction: column;
     gap: 10px;
     padding: 12px;
     box-sizing: border-box;
+    min-width: 0;
   }
 
   h1 {
@@ -354,7 +387,9 @@
 
   textarea {
     width: 100%;
+    box-sizing: border-box;
     flex: 1;
+    min-width: 0;
     resize: vertical;
     border: 1px solid #bccad3;
     border-radius: 10px;
