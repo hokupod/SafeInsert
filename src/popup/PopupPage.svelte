@@ -2,13 +2,13 @@
   import SafeInsertEditor from '../ui/SafeInsertEditor.svelte';
 </script>
 
-<main class="sidepanel-page">
+<main class="popup-page">
   <header>
     <h1>SafeInsert</h1>
-    <p>Side Panelで入力し、挿入でページへ反映します。</p>
+    <p>入力して、挿入でページへ反映します。</p>
   </header>
 
-  <SafeInsertEditor surface="sidepanel" />
+  <SafeInsertEditor surface="popup" />
 </main>
 
 <style>
@@ -20,13 +20,13 @@
     color: #1b252c;
   }
 
-  .sidepanel-page {
+  .popup-page {
     width: 100%;
-    height: 100vh;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 12px;
+    gap: 8px;
+    padding: 14px;
     box-sizing: border-box;
     min-width: 0;
   }
@@ -40,5 +40,14 @@
     margin: 4px 0 0;
     font-size: 12px;
     opacity: 0.82;
+  }
+
+  .popup-page :global(.safeinsert-editor__actions) {
+    margin-top: 2px;
+  }
+
+  .popup-page :global(.safeinsert-editor__hint),
+  .popup-page :global(.safeinsert-editor__status) {
+    line-height: 1.4;
   }
 </style>

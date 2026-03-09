@@ -8,8 +8,5 @@ if (!target) {
 }
 
 mount(SidePanelPage, {
-  target,
-  props: {
-    surface: 'sidepanel'
-  }
+  target
 });

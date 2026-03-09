@@ -1,15 +1,10 @@
 import { mount } from 'svelte';
 
-import SidePanelPage from '../../src/sidepanel/SidePanelPage.svelte';
+import PopupPage from '../../src/popup/PopupPage.svelte';
 
 const target = document.getElementById('app');
 if (!target) {
   throw new Error('Popup root element not found');
 }
 
-mount(SidePanelPage, {
-  target,
-  props: {
-    surface: 'popup'
-  }
-});
+mount(PopupPage, { target });
