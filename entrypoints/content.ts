@@ -7,7 +7,7 @@ import {
   SAFEINSERT_INSERT_TEXT,
   SAFEINSERT_REQUEST_TRACK_TARGET,
   SAFEINSERT_SETTINGS_UPDATED,
-  SAFEINSERT_SIDE_PANEL_ACTIVATED,
+  SAFEINSERT_UI_SURFACE_ACTIVATED,
   SAFEINSERT_TRACK_TARGET,
   type SafeInsertInsertResponse,
   type SafeInsertRuntimeMessage,
@@ -106,7 +106,7 @@ function handleKeydownCapture(event: KeyboardEvent): void {
   event.stopPropagation();
 
   void browser.runtime
-    .sendMessage({ type: SAFEINSERT_SIDE_PANEL_ACTIVATED })
+    .sendMessage({ type: SAFEINSERT_UI_SURFACE_ACTIVATED })
     .catch(() => {
       // Background may be unavailable on restricted pages.
     });

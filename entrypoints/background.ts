@@ -8,9 +8,9 @@ import {
   SAFEINSERT_GET_TARGET_STATE_FROM_TRACKED,
   SAFEINSERT_INSERT_TEXT,
   SAFEINSERT_INSERT_TEXT_TO_TRACKED,
-  SAFEINSERT_OPEN_SIDE_PANEL_REQUEST,
+  SAFEINSERT_OPEN_UI_SURFACE_REQUEST,
   SAFEINSERT_REQUEST_TRACK_TARGET,
-  SAFEINSERT_SIDE_PANEL_ACTIVATED,
+  SAFEINSERT_UI_SURFACE_ACTIVATED,
   SAFEINSERT_UI_SURFACE_READY,
   SAFEINSERT_TARGET_CLEARED,
   SAFEINSERT_TRACK_TARGET,
@@ -23,7 +23,7 @@ const lastTargetByTab = new Map<
   number,
   { frameId: number; inputType: string; isTextarea: boolean; updatedAt: number; windowId?: number }
 >();
-const lastPanelNotifyAtByTab = new Map<number, number>();
+const lastUiSurfaceNotifyAtByTab = new Map<number, number>();
 const SIDE_PANEL_READY_TIMEOUT_MS = 500;
 const SIDE_PANEL_READY_RECENT_WINDOW_MS = 1200;
 
@@ -45,6 +45,28 @@ let cacheReadyPromise: Promise<void> | null = null;
 let lastSidePanelReadyAt = 0;
 let sidePanelReadyWaiters: Array<() => void> = [];
 let sidePanelUnavailable = false;
+
+type SidePanelBehaviorApi = {
+  setPanelBehavior?: (options: { openPanelOnActionClick: boolean }) => Promise<void>;
+};
+
+type RuntimeWithGetUrl = typeof browser.runtime & {
+  getURL: (runtimePath: string) => string;
+};
+
+function setPanelBehaviorSafely(
+  sidePanel: SidePanelBehaviorApi | undefined,
+  openPanelOnActionClick: boolean,
+  failureLabel: string
+): void {
+  const request = sidePanel?.setPanelBehavior?.({ openPanelOnActionClick });
+  request?.catch((error) => log(failureLabel, String(error)));
+}
+
+function getRuntimeUrl(path: string): string {
+  // WXT's runtime typing in this project does not expose getURL, but the extension runtime provides it.
+  return (browser.runtime as RuntimeWithGetUrl).getURL(path);
+}
 
 function log(message: string, payload?: unknown): void {
   const time = new Date().toISOString();
@@ -158,7 +180,7 @@ async function openUiSurface(options: {
 
   try {
     await browser.windows.create({
-      url: browser.runtime.getURL('popup.html'),
+      url: getRuntimeUrl('popup.html'),
       type: 'popup',
       width: 620,
       height: 640
@@ -288,7 +310,7 @@ async function persistLastTarget(payload: PersistedLastTarget): Promise<void> {
 
 function clearTrackedTargetForTab(tabId: number): void {
   lastTargetByTab.delete(tabId);
-  lastPanelNotifyAtByTab.delete(tabId);
+  lastUiSurfaceNotifyAtByTab.delete(tabId);
   if (persistedLastTarget?.tabId === tabId) {
     persistedLastTarget = null;
     void browser.storage.local.remove(LAST_TARGET_STORAGE_KEY).catch(() => {
@@ -407,16 +429,12 @@ async function handleRuntimeMessage(
         markSidePanelReady('runtime-message');
         if (wasUnavailable) {
           log('side panel recovered: re-enabling side panel');
-          void chromeApiForBehavior.sidePanel
-            ?.setPanelBehavior?.({ openPanelOnActionClick: true })
-            .catch((error) => log('setPanelBehavior(true) failed', String(error)));
+          setPanelBehaviorSafely(chromeApiForBehavior.sidePanel, true, 'setPanelBehavior(true) failed');
         }
       } else {
         sidePanelUnavailable = true;
         log('side panel unavailable: zero dimensions; disabling side panel', { innerWidth: message.innerWidth, innerHeight: message.innerHeight });
-        void chromeApiForBehavior.sidePanel
-          ?.setPanelBehavior?.({ openPanelOnActionClick: false })
-          .catch((error) => log('setPanelBehavior(false) failed', String(error)));
+        setPanelBehaviorSafely(chromeApiForBehavior.sidePanel, false, 'setPanelBehavior(false) failed');
       }
     }
     return;
@@ -454,11 +472,11 @@ async function handleRuntimeMessage(
       previous.frameId !== frameId ||
       previous.inputType !== message.inputType ||
       previous.isTextarea !== message.isTextarea;
-    const lastNotifyAt = lastPanelNotifyAtByTab.get(tabId) ?? 0;
+    const lastNotifyAt = lastUiSurfaceNotifyAtByTab.get(tabId) ?? 0;
     const shouldNotifyPanel = hasTargetChanged || Date.now() - lastNotifyAt > 800;
     if (shouldNotifyPanel) {
-      lastPanelNotifyAtByTab.set(tabId, Date.now());
-      void browser.runtime.sendMessage({ type: SAFEINSERT_SIDE_PANEL_ACTIVATED }).catch(() => {
+      lastUiSurfaceNotifyAtByTab.set(tabId, Date.now());
+      void browser.runtime.sendMessage({ type: SAFEINSERT_UI_SURFACE_ACTIVATED }).catch(() => {
         // Side panel may be closed.
       });
     }
@@ -536,20 +554,20 @@ async function handleRuntimeMessage(
     return response;
   }
 
-  if (message?.type === SAFEINSERT_SIDE_PANEL_ACTIVATED) {
+  if (message?.type === SAFEINSERT_UI_SURFACE_ACTIVATED) {
     const tabId = sender.tab?.id;
     const windowId = sender.tab?.windowId;
     if (typeof tabId === 'number') {
       await openUiSurface({
         tabId,
         windowId,
-        reason: 'side-panel-activated-message'
+        reason: 'ui-surface-activated-message'
       });
     }
     return;
   }
 
-  if (message?.type !== SAFEINSERT_OPEN_SIDE_PANEL_REQUEST) {
+  if (message?.type !== SAFEINSERT_OPEN_UI_SURFACE_REQUEST) {
     return;
   }
 
@@ -591,9 +609,7 @@ export default defineBackground(() => {
   if (!hasSetPanelBehavior || !hasOpen) {
     log('skip setPanelBehavior; keep popup fallback', { hasSetPanelBehavior, hasOpen });
   } else {
-    void chromeApi.sidePanel
-      ?.setPanelBehavior?.({ openPanelOnActionClick: true })
-      .catch((error) => log('setPanelBehavior failed', String(error)));
+    setPanelBehaviorSafely(chromeApi.sidePanel, true, 'setPanelBehavior failed');
   }
 
   browser.commands.onCommand.addListener((command) => {
