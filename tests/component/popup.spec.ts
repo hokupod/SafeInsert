@@ -29,9 +29,9 @@ vi.mock('wxt/browser', () => {
   };
 });
 
-import SidePanelPage from '../../src/sidepanel/SidePanelPage.svelte';
+import PopupPage from '../../src/popup/PopupPage.svelte';
 
-describe('SidePanelPage', () => {
+describe('PopupPage', () => {
   afterEach(() => {
     cleanup();
     vi.restoreAllMocks();
@@ -62,13 +62,14 @@ describe('SidePanelPage', () => {
     });
   });
 
-  it('renders side panel guidance and mounts the editor', async () => {
-    const { container, getByText } = render(SidePanelPage);
+  it('renders popup page with neutral guidance and popup layout class', async () => {
+    const { container, getByText } = render(PopupPage);
+
     await waitFor(() => {
-      expect(getByText('Side Panelで入力し、挿入でページへ反映します。')).toBeTruthy();
+      expect(getByText('入力して、挿入でページへ反映します。')).toBeTruthy();
     });
 
-    expect(container.querySelector('main')?.classList.contains('sidepanel-page')).toBe(true);
+    expect(container.querySelector('main')?.classList.contains('popup-page')).toBe(true);
     expect(container.querySelector('.safeinsert-editor__actions')).toBeTruthy();
   });
 });
