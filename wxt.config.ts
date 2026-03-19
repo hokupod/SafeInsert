@@ -6,7 +6,7 @@ export default defineConfig({
   manifest: {
     name: 'SafeInsert',
     description: 'IME確定による誤送信を避ける安全入力サイドパネル',
-    version: '0.1.2',
+    version: '0.2.0',
     icons: {
       16: 'icon.png',
       32: 'icon.png',
